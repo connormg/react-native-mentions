@@ -31,7 +31,7 @@ export default class MentionsTextInput extends Component {
   componentWillReceiveProps(nextProps) {
     if (!nextProps.value) {
       this.resetTextbox();
-    } else if (this.isTrackingStarted && !nextProps.horizontal && nextProps.suggestionsData.length !== 0) {
+    } else if (this.isTrackingStarted && !nextProps.horizontal && nextProps.suggestionsData && nextProps.suggestionsData.length !== 0) {
       const numOfRows = nextProps.MaxVisibleRowCount >= nextProps.suggestionsData.length ? nextProps.suggestionsData.length : nextProps.MaxVisibleRowCount;
       const height = numOfRows * nextProps.suggestionRowHeight;
       this.openSuggestionsPanel(height);
@@ -74,8 +74,9 @@ export default class MentionsTextInput extends Component {
 
   identifyKeyword(val) {
     if (this.isTrackingStarted) {
+      const triggerCharacters = this.props.trigger.join('')
       const boundary = this.props.triggerLocation === 'new-word-only' ? 'B' : '';
-      const pattern = new RegExp(`\\${boundary}${this.props.trigger}[a-z0-9_-]+|\\${boundary}${this.props.trigger}`, `gi`);
+      const pattern = new RegExp(`\\${boundary}[${triggerCharacters}][a-z0-9_-]+|\\${boundary}[${triggerCharacters}]`, `gi`);
       const keywordArray = val.match(pattern);
       if (keywordArray && !!keywordArray.length) {
         const lastKeyword = keywordArray[keywordArray.length - 1];
@@ -87,8 +88,9 @@ export default class MentionsTextInput extends Component {
   onChangeText(val) {
     this.props.onChangeText(val); // pass changed text back
     const lastChar = val.substr(val.length - 1);
+    const triggerCharacters = ['$', '@'].join('')
     const wordBoundry = (this.props.triggerLocation === 'new-word-only') ? this.previousChar.trim().length === 0 : true;
-    if (lastChar === this.props.trigger && wordBoundry) {
+    if (lastChar.match(new RegExp(`[${triggerCharacters}]`, 'g')) && wordBoundry) {
       this.startTracking();
     } else if (lastChar === ' ' && this.state.isTrackingStarted || val === "") {
       this.stopTracking();
@@ -145,7 +147,7 @@ MentionsTextInput.propTypes = {
   ]),
   textInputMinHeight: PropTypes.number,
   textInputMaxHeight: PropTypes.number,
-  trigger: PropTypes.string.isRequired,
+  trigger: PropTypes.array.isRequired,
   triggerLocation: PropTypes.oneOf(['new-word-only', 'anywhere']).isRequired,
   value: PropTypes.string.isRequired,
   onChangeText: PropTypes.func.isRequired,
